@@ -1,0 +1,70 @@
+
+
+%import(temp1)
+
+%cross multiply power to figure out how much power we got
+%Power = V*i;
+
+load("good data knock on wood\ONOFF_TEST2HZ\all_messages_2024_04_04-06_33_12_PM_DATA_SAVE.mat")
+
+% t501_time = [0, time_T501{:,1}, time_T501{:,2}, time_T501{:,3}];
+% t502_time = [0, time_T502{:,1}, time_T502{:,2}, time_T502{:,3}];
+% t504_time = [0, time_T504{:,1}, time_T504{:,2}, time_T504{:,3}];
+% 
+% t501_temp = [96.25, temp_T501{:,1}, temp_T501{:,2}, temp_T501{:,3}];
+% t502_temp = [48, temp_T502{:,1}, temp_T502{:,2}, temp_T502{:,3}];
+% t504_temp = [29.75, temp_T504{:,1}, temp_T504{:,2}, temp_T504{:,3}];
+% 
+% voltage_time = [time_voltage{:,1}, time_voltage{:,2}, time_voltage{:,3}];
+% voltage = [voltage{:,1}, voltage{:,2}, voltage{:,3}]
+
+% for i = 2:185835
+%     if(time_voltage(i-1) >= time_voltage(i));
+%         time_voltage(i) = [];
+%         voltage(i) = [];
+%     end
+% end
+
+[time_voltage, ia, ic] = unique(time_voltage);
+voltage = voltage(ia);
+
+[time_current, ia, ic] = unique(time_current);
+current = current(ia);
+
+figure(1)
+plot(time_current, current)
+
+figure(2)
+plot(time_voltage, voltage)
+
+curveFitter
+
+t = 0:0.1:600;
+T501 = [T501_400_Lfittedmodel(t(1:4000))' T501_400_Gfittedmodel(t(4001:6001))'];
+T502 = [T502_450_less_fittedmodel(t(1:4500))' T502_450_less_fittedmodel(t(:,4501:6001))'];
+T504 = T504_fittedmodel(t);
+voltage = voltage_fittedmodel(t);
+current = current_fittedmodel(t);
+
+figure(1)
+subplot(3,2,1)
+title('T501 Interpolated')
+plot(t, T501);
+hold on;
+subplot(3,2,2)
+title('T502 Interpolated')
+plot(t, T502);
+subplot(3,2,3)
+title('T504 Interpolated')
+plot(t, T504);
+subplot(3,2,4)
+title("Voltage interpolated")
+plot(t, voltage)
+subplot(3,2,5)
+title("Current interpolated")
+plot(t, current)
+
+
+curveFitter
+
+save("good data knock on wood\ONOFF_TEST0_5HZ\interpolated_temps", "T501_output", "T501_fittedmodel", "T501_goodness", 'T501', "T502", 'T504', "voltage", 't')
