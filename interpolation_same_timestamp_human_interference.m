@@ -82,4 +82,4 @@ end
 
 curveFitter
 
-save("good data knock on wood\ONOFF_TEST0_5HZ\interpolated_data", "T501_350_Hfittedmodel", "T501_350_Lfittedmodel", "T502_fittedmodel", "T504_fittedmodel", "current_fittedmodel", "voltage_fittedmodel", "T501_goodness", 'T501', "T502", 'T504', "current", "voltage", 't')
+save("good data knock on wood\ONOFF_TEST_0_25HZ_HUMAN_INTERFERENCE_LATER\interpolated_data", "T501_350_Hfittedmodel", "T501_350_Lfittedmodel", "T502_fittedmodel", "T504_fittedmodel", "current_fittedmodel", "voltage_fittedmodel", 'T501', "T502", 'T504', "current", "voltage", 't')
