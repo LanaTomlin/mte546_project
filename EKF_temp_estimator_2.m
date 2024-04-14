@@ -214,15 +214,15 @@ sigmat_adc = (15*10^-3)^2;
 Cp = Cp*1000/40;
 Ro = 4;
 alpha = 0.00017; %temperature coefficeint of resistance nichrome wire
-sigmav = sigmat_meas*Ro*alpha;
+sigmav = ((sigmat_meas^(1/2))*Ro*alpha)^2;
 
-KH = K*Ac/(m*Cp*L);
+KH = 0; %K*Ac/(m*Cp*L);
 A = [0, -KH, 0;
     tdiv, 1 + hc*As*tdiv/(m*Cp*L), 0;
     tdiv*alpha*Ro, 0, 1];
-B = [(Vo^2)*Ro/(m*Cp);  -(hc*As*ti*tdiv)/(m*Cp*L); 0];
+B = [(Vo^2)*Ro/(m*Cp);  -(hc*As*ti*tdiv)/(m*Cp); 0];
 H = [0, KH, 0;
-    -tdiv, -1-hc*As*tdiv/(m*Cp*L), 0;
+    -tdiv, -1-hc*As*tdiv/(m*Cp), 0;
     0, 0, Vo^2];
 T = [0; ti; 4];
 Tk = [0; ti; 4];
@@ -247,7 +247,7 @@ for i = 2:(length(t))
     Pk = [Pk, A*Pk(1:3,i-1:i+1)*A' + Q];
     %Zk = [current(i)*voltage(i); Tk(:,i)];
     %correction
-    zk = [current(i)*Vo/tdiv; current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)];
+    zk = [current(i)*Vo/tdiv; current(i)*Vo+(hc*As*ti*tdiv)/(L*m*Cp); current(i)];
     Kk = [Kk, (Pk(1:3,i-1:i+1)*H')*(H*Pk(1:3,i-1:i+1)*H' + R)'];
     Tk(:,i) = Tk(:,i) +Kk(1:3,i-1:i+1)*(zk - H*Tk(:,i));
     %T(i) = T(i) + B;
@@ -265,34 +265,42 @@ legend('temp_est_conv', "T", "Tk")
 
 
 
-
-KH = K*Ac/(m*Cp*L);
+K = 13.0; %w/m-K 
+hc = 50;
+Cp = Cp*10;
+KH = 0; %K*Ac/(m*Cp*L);
 A = [0, 0, 0, 0, -KH, 0, 0, 0;
-    tdiv/500, 1 + (hc*As-K*Ac/L1)*tdiv/(500*m*Cp), (-K*Ac/L1)*tdiv/(500*m*Cp), 0, 0, 0, 0, 0;
-    tdiv/20, (-K1*Ac/L1)*tdiv/(20*m*Cp), 1+(hc*As-K*Ac/L2)*tdiv/(20*m*Cp), (-K1*Ac/L2)*tdiv/(20*m*Cp), 0, 0, 0, 0;
-    tdiv/20, 0, (-K1*Ac/L2)*tdiv/(20*m*Cp), 1+(hc*As-K*Ac/L3)*tdiv/(20*m*Cp), (-K1*Ac/L3)*tdiv/(20*m*Cp), 0, 0, 0;
-    tdiv, 0, 0, (-K1*Ac/L3)*tdiv/(m*Cp), 1+(hc*As-K*Ac/L4)*tdiv/(m*Cp), (-K1*Ac/L4)*tdiv/(m*Cp), 0, 0;
-    tdiv/20, 0, 0, 0, (-K1*Ac/L4)*tdiv/(m*Cp*20), 1+(hc*As-K*Ac/L5)*tdiv/(20*m*Cp), (-K1*Ac/L5)*tdiv/(50*m*Cp), 0;
-    tdiv/20, 0, 0, 0, 0, (-K1*Ac/L5)*tdiv/(m*Cp*20), 1+(hc*As-K*Ac/L6)*tdiv/(20*m*Cp), 0;
+    tdiv/10, 1+(hc*As-K*Ac/L1)*tdiv/(m*Cp*500), (K*Ac/L1)*tdiv/(m*Cp*500), 0, 0, 0, 0, 0;
+    tdiv, (-K*Ac/L1)*tdiv/(m*Cp*20), 1+(hc*As+K*Ac/L2 + K*Ac/L1)*tdiv/(m*Cp*20), (-K*Ac/L2)*tdiv/(m*Cp*20), 0, 0, 0, 0;
+    tdiv/10, 0, (-K*Ac/L2)*tdiv/(m*Cp), 1+(hc*As+K*Ac/L2 + K*Ac/L3)*tdiv/(m*Cp), (-K*Ac/L3)*tdiv/(m*Cp), 0, 0, 0;
+    tdiv*5, 0, 0, (-K*Ac/L3)*tdiv/(m*Cp/10), 1+(hc*As+K*Ac/L4 + K*Ac/L3)*tdiv/(m*Cp/10), (-K*Ac/L4)*tdiv/(m*Cp/10), 0, 0;
+    tdiv/10, 0, 0, 0, (-K*Ac/L4)*tdiv/(m*Cp*20), 1+(hc*As+K*Ac/L5 + K*Ac/L4)*tdiv/(m*Cp*20), (-K*Ac/L5)*tdiv/(m*Cp*20), 0;
+    tdiv, 0, 0, 0, 0, (-K*Ac/L5)*tdiv/(m*Cp), 1+(hc*As+K*Ac/L5)*tdiv/(m*Cp), 0;
     tdiv*alpha*Ro, 0, 0, 0, 0, 0, 0, 1];
-B = [(Vo^2)*Ro/(m*Cp);  -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); 0];
+B = [(Vo^2)*Ro/(m*Cp);  -(hc*As*ti*tdiv)/(m*Cp); -(hc*As*ti*tdiv)/(m*Cp); -(hc*As*ti*tdiv)/(m*Cp); -(hc*As*ti*tdiv)/(m*Cp); -(hc*As*ti*tdiv)/(m*Cp); -(hc*As*ti*tdiv)/(m*Cp); 0];
 H = [0, 0, 0, 0, -KH, 0, 0, 0;
-    -tdiv/500, (1 + (hc*As-K*Ac/L1)*tdiv/(500*m*Cp)), (K*Ac/L1)*tdiv/(500*m*Cp), 0, 0, 0, 0, 0;
-    -tdiv/20, (K1*Ac/L1)*tdiv/(20*m*Cp), -1-(hc*As-K*Ac/L2)*tdiv/(20*m*Cp), (K1*Ac/L2)*tdiv/(20*m*Cp), 0, 0, 0, 0;
-    -tdiv/20, 0, (K1*Ac/L2)*tdiv/(20*m*Cp), -1-(hc*As-K*Ac/L3)*tdiv/(20*m*Cp), (K1*Ac/L3)*tdiv/(20*m*Cp), 0, 0, 0;
-    -tdiv, 0, 0, (K1*Ac/L3)*tdiv/(m*Cp), -1-(hc*As-K*Ac/L4)*tdiv/(m*Cp), (K1*Ac/L4)*tdiv/(m*Cp), 0, 0;
-    -tdiv/20, 0, 0, 0, (K1*Ac/L4)*tdiv/(m*Cp*20), -1-(hc*As-K*Ac/L5)*tdiv/(20*m*Cp), (K1*Ac/L5)*tdiv/(50*m*Cp), 0;
-    -tdiv/20, 0, 0, 0, 0, (K1*Ac/L5)*tdiv/(m*Cp*20), -1-(hc*As-K*Ac/L6)*tdiv/(20*m*Cp), 0;
+    -tdiv/10, (1 + (hc*As-K*Ac/L1)*tdiv/(m*Cp)), (K*Ac/L1)*tdiv/(m*Cp), 0, 0, 0, 0, 0;
+    -tdiv, (K*Ac/L1)*tdiv/(m*Cp), -1-(hc*As+K*Ac/L2 + K*Ac/L1)*tdiv/(m*Cp), (K*Ac/L2)*tdiv/(m*Cp), 0, 0, 0, 0;
+    -tdiv/10, 0, (K*Ac/L2)*tdiv/(m*Cp), -1-(hc*As+K*Ac/L2 + K*Ac/L3)*tdiv/(m*Cp), (K*Ac/L3)*tdiv/(m*Cp), 0, 0, 0;
+    -tdiv, 0, 0, (K*Ac/L3)*tdiv/(m*Cp), -1-(hc*As+K*Ac/L4 + K*Ac/L3)*tdiv/(m*Cp), (K*Ac/L4)*tdiv/(m*Cp), 0, 0;
+    -tdiv/10, 0, 0, 0, (K*Ac/L4)*tdiv/(m*Cp), -1-(hc*As+K*Ac/L5 + K*Ac/L4)*tdiv/(m*Cp), (K*Ac/L5)*tdiv/(m*Cp), 0;
+    -tdiv, 0, 0, 0, 0, (K*Ac/L5)*tdiv/(m*Cp), -1-(hc*As+K*Ac/L5)*tdiv/(m*Cp), 0;
     0, 0, 0, 0, 0, 0, 0, Vo^2];
 T = [0; ti; ti; ti; ti; ti; ti; 4];
 Tk = [0; ti; ti; ti; ti; ti; ti; 4];
 Pk = zeros(8);
-Q = [sigmat_meas*tdiv^2, (sigmat_meas*tdiv^3)/2, 0;
-    (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^4)/4, 0;
-    0, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^2)];
+Q = [sigmat_meas*tdiv^2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, 0;
+    (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, 0;
+    (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, 0;
+    (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, 0;
+    (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, 0;
+    (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, 0;
+    (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, (sigmat_meas*tdiv^4)/4, 0;
+    0, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^2)];
 Kk = zeros(8);
 %H = [1];
-R = [sigmat_adc*Ro; sigmat_adc*Ro; sigmat_adc*Ro];
+R = [sigmat_adc*Ro; sigmat_adc*Ro; sigmat_adc*Ro; sigmat_adc*Ro; sigmat_adc*Ro; sigmat_adc*Ro; sigmat_adc*Ro; sigmat_adc*Ro];
+
 
 for i = 2:(length(t))
 
@@ -300,22 +308,46 @@ for i = 2:(length(t))
     if(current(i-1) < 2)
         power_on = 0;
     end
-    Tnew = A*T(:,i-1) + B.*[power_on;1;1];
+    Tnew = A*T(:,i-1) + B.*[power_on;1;1;1;1;1;1;1];
     T = [T,Tnew];
     %prediction
     Tk = [Tk,Tnew];
-    Pk = [Pk, A*Pk(1:3,i-1:i+1)*A' + Q];
+    Pk = [Pk, A*Pk(1:8,i-1:i+6)*A' + Q];
     %Zk = [current(i)*voltage(i); Tk(:,i)];
     %correction
-    zk = [current(i)*Vo/tdiv; current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)];
-    Kk = [Kk, (Pk(1:3,i-1:i+1)*H')*(H*Pk(1:3,i-1:i+1)*H' + R)'];
-    Tk(:,i) = Tk(:,i) +Kk(1:3,i-1:i+1)*(zk - H*Tk(:,i));
+    %B = [(Vo^2)*Ro/(m*Cp);  -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L)(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); 0];
+
+    zk = [current(i)*Vo/tdiv; current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)];
+    Kk = [Kk, (Pk(1:8,i-1:i+6)*H')*(H*Pk(1:8,i-1:i+6)*H' + R)'];
+    (zk - H*Tk(:,i));
+    Tk(:,i) = Tk(:,i) +Kk(1:8,i-1:i+6)*(zk - H*Tk(:,i));
     %T(i) = T(i) + B;
 end
 
-figure(4)
-plot(t, temp_est_conv)
-hold on
-plot(t, T)
 plot(t, Tk(2,:))
-legend('temp_est_conv', "T", "Tk")
+
+
+figure(5);
+subplot(3,2,1)
+title('section 1 estimated, basic')
+plot(t, Tk(2,:))
+hold on;
+subplot(3, 2, 2)
+plot(t, Tk(3,:))
+hold on;
+plot(t, T502)
+subplot(3,2,3);
+plot(t, Tk(4,:))
+subplot(3,2,4)
+plot(t, Tk(5,:))
+hold on
+plot(t, T501);
+subplot(3,2,5)
+plot(t, Tk(6,:))
+hold on 
+subplot(3,2,6)
+title("temp est")
+plot(t, Tk(7,:))
+hold on 
+plot(t, T504)
+
