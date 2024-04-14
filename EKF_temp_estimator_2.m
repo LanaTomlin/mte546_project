@@ -5,9 +5,11 @@
 %cross multiply power to figure out how much power we got
 %Power = V*i;
 
-%load("good data knock on wood\ONOFF_TEST2HZ\ONOFF_TEST_0_25HZ_HUMAN_INTERFERENCE_LATER\all_messages_2024_04_04-07_10_28_PM_DATA_SAVE")
+%load("good data knock on wood\ONOFF_TEST2HZ\interpolated_data.mat")
 
-load("good data knock on wood\ONOFF_TEST0_5HZ\interpolated_data.mat")
+load("good data knock on wood\ONOFF_UNKNOWN_PROBABLY_0_25HZ\interpolated_data.mat")
+
+%load("good data knock on wood\ONOFF_TEST0_5HZ\interpolated_data.mat")
 T504(1) = 27.4;
 
 resistance = voltage./current;
