@@ -13,11 +13,11 @@ T504(1) = 27.4;
 resistance = voltage./current;
 resit_prev = 7;
 for i = 2:length(current)
-    if(current(i) > 0.003/(50.0*0.005))
-        resistance(i) = voltage(i)/current(i);
-        if(resistance(i) > 10)
-            resistance(i) = resit_prev;
-        end
+    if(current(i) > 2)
+        resistance(i) = 11.84/current(i);
+        %if(resistance(i) > 10)
+         %   resistance(i) = resit_prev;
+        %end
         resit_prev = resistance(i);
     else
         resistance(i) = resit_prev;
@@ -96,6 +96,8 @@ tdiv = 0.1;
 hc = 50; % W/m^2k convective heat transferfor air
 
 Ac = 2*8.2515*pi*10^-6;
+As = 2*8.2515*pi*10^-6;
+
 %sectionT504 = 
 K1 = 60;
 e = 5.67*10^-8;
@@ -204,33 +206,116 @@ plot(t, T504)
 
 hold on;
 %qc + qr + mCp*dTc/dt = qs + (I^2)*R
-A = [1, -hc*Ac*tdiv/(m*Cp)+1];
-B = ti*hc*Ac*tdiv/(m*Cp);
-H = [1, 0];
-T = [ti];
-Tk = [ti];
-Pk = [0];
-Kk = [0];
-Q = [0];
-Kk = [0];
+
+dc = 0.6;
+Vo = 11.84;
+sigmat_meas = (15*10^-3)^2;
+sigmat_adc = (15*10^-3)^2;
+Cp = Cp*1000/40;
+Ro = 4;
+alpha = 0.00017; %temperature coefficeint of resistance nichrome wire
+sigmav = sigmat_meas*Ro*alpha;
+
+KH = K*Ac/(m*Cp*L);
+A = [0, -KH, 0;
+    tdiv, 1 + hc*As*tdiv/(m*Cp*L), 0;
+    tdiv*alpha*Ro, 0, 1];
+B = [(Vo^2)*Ro/(m*Cp);  -(hc*As*ti*tdiv)/(m*Cp*L); 0];
+H = [0, KH, 0;
+    -tdiv, -1-hc*As*tdiv/(m*Cp*L), 0;
+    0, 0, Vo^2];
+T = [0; ti; 4];
+Tk = [0; ti; 4];
+Pk = zeros(3);
+Q = [sigmat_meas*tdiv^2, (sigmat_meas*tdiv^3)/2, 0;
+    (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^4)/4, 0;
+    0, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^2)];
+Kk = zeros(3);
 %H = [1];
-R = [0];
+R = [sigmat_adc*Ro; sigmat_adc*Ro; sigmat_adc*Ro];
+
 for i = 2:(length(t))
 
-    Tnew = A*[current(i)*voltage(i); T(i-1)] + B;
+    power_on = 1;
+    if(current(i-1) < 2)
+        power_on = 0;
+    end
+    Tnew = A*T(:,i-1) + B.*[power_on;1;1];
     T = [T,Tnew];
     %prediction
     Tk = [Tk,Tnew];
-    Pk = [Pk, A*Pk(i-1)*A' + Q];
-    Zk = [current(i)*voltage(i); Tk(i)];
+    Pk = [Pk, A*Pk(1:3,i-1:i+1)*A' + Q];
+    %Zk = [current(i)*voltage(i); Tk(:,i)];
     %correction
-    Kk = [Kk, (Pk(i)*H')*(H*Pk(i)*H' + R)'];
-    Tk(i) = Tk(i) +Kk*(Zk - H*Tk(i))
+    zk = [current(i)*Vo/tdiv; current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)];
+    Kk = [Kk, (Pk(1:3,i-1:i+1)*H')*(H*Pk(1:3,i-1:i+1)*H' + R)'];
+    Tk(:,i) = Tk(:,i) +Kk(1:3,i-1:i+1)*(zk - H*Tk(:,i));
     %T(i) = T(i) + B;
 end
 
 figure(4)
 plot(t, temp_est_conv)
 hold on
-plot(t, temp_est_basic)
 plot(t, T)
+plot(t, Tk(2,:))
+legend('temp_est_conv', "T", "Tk")
+
+%%state 
+%dT, T1, T2, T3, T4, T5, T6, R
+
+
+
+
+KH = K*Ac/(m*Cp*L);
+A = [0, 0, 0, 0, -KH, 0, 0, 0;
+    tdiv/500, 1 + (hc*As-K*Ac/L1)*tdiv/(500*m*Cp), (-K*Ac/L1)*tdiv/(500*m*Cp), 0, 0, 0, 0, 0;
+    tdiv/20, (-K1*Ac/L1)*tdiv/(20*m*Cp), 1+(hc*As-K*Ac/L2)*tdiv/(20*m*Cp), (-K1*Ac/L2)*tdiv/(20*m*Cp), 0, 0, 0, 0;
+    tdiv/20, 0, (-K1*Ac/L2)*tdiv/(20*m*Cp), 1+(hc*As-K*Ac/L3)*tdiv/(20*m*Cp), (-K1*Ac/L3)*tdiv/(20*m*Cp), 0, 0, 0;
+    tdiv, 0, 0, (-K1*Ac/L3)*tdiv/(m*Cp), 1+(hc*As-K*Ac/L4)*tdiv/(m*Cp), (-K1*Ac/L4)*tdiv/(m*Cp), 0, 0;
+    tdiv/20, 0, 0, 0, (-K1*Ac/L4)*tdiv/(m*Cp*20), 1+(hc*As-K*Ac/L5)*tdiv/(20*m*Cp), (-K1*Ac/L5)*tdiv/(50*m*Cp), 0;
+    tdiv/20, 0, 0, 0, 0, (-K1*Ac/L5)*tdiv/(m*Cp*20), 1+(hc*As-K*Ac/L6)*tdiv/(20*m*Cp), 0;
+    tdiv*alpha*Ro, 0, 0, 0, 0, 0, 0, 1];
+B = [(Vo^2)*Ro/(m*Cp);  -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); -(hc*As*ti*tdiv)/(m*Cp*L); 0];
+H = [0, 0, 0, 0, -KH, 0, 0, 0;
+    -tdiv/500, (1 + (hc*As-K*Ac/L1)*tdiv/(500*m*Cp)), (K*Ac/L1)*tdiv/(500*m*Cp), 0, 0, 0, 0, 0;
+    -tdiv/20, (K1*Ac/L1)*tdiv/(20*m*Cp), -1-(hc*As-K*Ac/L2)*tdiv/(20*m*Cp), (K1*Ac/L2)*tdiv/(20*m*Cp), 0, 0, 0, 0;
+    -tdiv/20, 0, (K1*Ac/L2)*tdiv/(20*m*Cp), -1-(hc*As-K*Ac/L3)*tdiv/(20*m*Cp), (K1*Ac/L3)*tdiv/(20*m*Cp), 0, 0, 0;
+    -tdiv, 0, 0, (K1*Ac/L3)*tdiv/(m*Cp), -1-(hc*As-K*Ac/L4)*tdiv/(m*Cp), (K1*Ac/L4)*tdiv/(m*Cp), 0, 0;
+    -tdiv/20, 0, 0, 0, (K1*Ac/L4)*tdiv/(m*Cp*20), -1-(hc*As-K*Ac/L5)*tdiv/(20*m*Cp), (K1*Ac/L5)*tdiv/(50*m*Cp), 0;
+    -tdiv/20, 0, 0, 0, 0, (K1*Ac/L5)*tdiv/(m*Cp*20), -1-(hc*As-K*Ac/L6)*tdiv/(20*m*Cp), 0;
+    0, 0, 0, 0, 0, 0, 0, Vo^2];
+T = [0; ti; ti; ti; ti; ti; ti; 4];
+Tk = [0; ti; ti; ti; ti; ti; ti; 4];
+Pk = zeros(8);
+Q = [sigmat_meas*tdiv^2, (sigmat_meas*tdiv^3)/2, 0;
+    (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^4)/4, 0;
+    0, (sigmat_meas*tdiv^3)/2, (sigmat_meas*tdiv^2)];
+Kk = zeros(8);
+%H = [1];
+R = [sigmat_adc*Ro; sigmat_adc*Ro; sigmat_adc*Ro];
+
+for i = 2:(length(t))
+
+    power_on = 1;
+    if(current(i-1) < 2)
+        power_on = 0;
+    end
+    Tnew = A*T(:,i-1) + B.*[power_on;1;1];
+    T = [T,Tnew];
+    %prediction
+    Tk = [Tk,Tnew];
+    Pk = [Pk, A*Pk(1:3,i-1:i+1)*A' + Q];
+    %Zk = [current(i)*voltage(i); Tk(:,i)];
+    %correction
+    zk = [current(i)*Vo/tdiv; current(i)*Vo+(hc*As*ti*tdiv)/(m*Cp); current(i)];
+    Kk = [Kk, (Pk(1:3,i-1:i+1)*H')*(H*Pk(1:3,i-1:i+1)*H' + R)'];
+    Tk(:,i) = Tk(:,i) +Kk(1:3,i-1:i+1)*(zk - H*Tk(:,i));
+    %T(i) = T(i) + B;
+end
+
+figure(4)
+plot(t, temp_est_conv)
+hold on
+plot(t, T)
+plot(t, Tk(2,:))
+legend('temp_est_conv', "T", "Tk")
